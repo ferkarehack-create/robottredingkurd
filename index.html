@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ckb" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبۆردی ڕۆبۆتی بازرگانی - Forex EA Simulator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font: Vazirmatn / Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif'],
+                    },
+                    colors: {
+                        gold: {
+                            DEFAULT: '#f59e0b',
+                            dark: '#d97706',
+                            light: '#fbbf24',
+                        },
+                        darkbg: '#0b0f19',
+                        cardbg: '#111827',
+                        borderbg: '#1f2937'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            font-family: 'Vazirmatn', sans-serif;
+            user-select: none;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+        .glow-green {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+        .glow-red {
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+        .glow-gold {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header / Navbar -->
+    <header class="bg-cardbg border-b border-borderbg px-4 py-3 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-gold-dark to-gold flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white flex items-center gap-2">
+                        داشبۆردی ڕۆبۆتی بازرگانی
+                        <span class="text-xs font-normal bg-gold/20 text-gold border border-gold/30 px-2 py-0.5 rounded-full">Pro EA v2.4</span>
+                    </h1>
+                    <p class="text-xs text-gray-400">سیستەمی ئۆتۆماتیکی و سیمولەیتەری ڕاستەوخۆ (Forex Automation)</p>
+                </div>
+            </div>
+
+            <!-- Bot Master Switch & Status -->
+            <div class="flex items-center gap-4 bg-darkbg p-2 px-4 rounded-xl border border-borderbg">
+                <div class="flex items-center gap-2">
+                    <span id="botStatusDot" class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+                    <span id="botStatusText" class="text-sm font-semibold text-red-400">دۆخی ڕۆبۆت: ناچالاک</span>
+                </div>
+                <button id="toggleBotBtn" onclick="toggleBot()" class="bg-red-600 hover:bg-red-500 text-white font-bold py-1.5 px-4 rounded-lg transition-all text-sm flex items-center gap-2 shadow-md">
+                    <i class="fa-solid fa-power-off"></i>
+                    <span>چالاککردن</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto w-full p-4 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+        <!-- Top Overview Stats (4 Columns) -->
+        <div class="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-3">
+            <!-- Balance -->
+            <div class="bg-cardbg p-4 rounded-xl border border-borderbg flex justify-between items-center">
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">باڵانس (Balance)</p>
+                    <h2 id="statBalance" class="text-xl font-bold text-white">$10,000.00</h2>
+                </div>
+                <div class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+            </div>
+            <!-- Equity -->
+            <div class="bg-cardbg p-4 rounded-xl border border-borderbg flex justify-between items-center">
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">سەرمایەی بەردەست (Equity)</p>
+                    <h2 id="statEquity" class="text-xl font-bold text-white">$10,000.00</h2>
+                </div>
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+            <!-- Live PnL -->
+            <div class="bg-cardbg p-4 rounded-xl border border-borderbg flex justify-between items-center">
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">قازانج / زیانی بێوچان (PnL)</p>
+                    <h2 id="statPnL" class="text-xl font-bold text-gray-400">$0.00</h2>
+                </div>
+                <div id="pnlIconContainer" class="w-10 h-10 rounded-lg bg-gray-500/10 text-gray-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+            </div>
+            <!-- Win Rate -->
+            <div class="bg-cardbg p-4 rounded-xl border border-borderbg flex justify-between items-center">
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">ڕێژەی سەرکەوتن (Win Rate)</p>
+                    <h2 id="statWinRate" class="text-xl font-bold text-gold">0.0%</h2>
+                </div>
+                <div class="w-10 h-10 rounded-lg bg-gold/10 text-gold flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Left Column: Chart and Active Orders (8 Cols) -->
+        <div class="lg:col-span-8 flex flex-col gap-4">
+
+            <!-- Interactive Chart Container -->
+            <div class="bg-cardbg p-4 rounded-xl border border-borderbg flex flex-col">
+                <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+                    <div class="flex items-center gap-3">
+                        <!-- Pair Selector -->
+                        <select id="pairSelect" onchange="changePair()" class="bg-darkbg text-white border border-borderbg rounded-lg px-3 py-1.5 text-sm font-semibold focus:outline-none focus:border-gold">
+                            <option value="EURUSD">EUR/USD - یۆرۆ / دۆلار</option>
+                            <option value="GBPUSD">GBP/USD - پاوەند / دۆلار</option>
+                            <option value="XAUUSD" selected>XAU/USD - زێڕ / دۆلار</option>
+                            <option value="BTCUSD">BTC/USD - بیتکۆین / دۆلار</option>
+                        </select>
+                        <span id="currentPriceDisplay" class="text-lg font-bold text-emerald-400">2,350.50</span>
+                    </div>
+
+                    <!-- Chart Controls -->
+                    <div class="flex items-center gap-2 text-xs">
+                        <button onclick="setChartType('candlestick')" id="btnCandle" class="px-2.5 py-1 bg-gold text-slate-950 font-bold rounded">Candles</button>
+                        <button onclick="setChartType('line')" id="btnLine" class="px-2.5 py-1 bg-darkbg text-gray-300 rounded border border-borderbg hover:bg-gray-800">Line</button>
+                        <div class="h-4 w-px bg-borderbg mx-1"></div>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" id="chkSMA" checked onchange="drawChart()" class="accent-gold">
+                            <span class="text-gray-300">SMA</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" id="chkBollinger" checked onchange="drawChart()" class="accent-gold">
+                            <span class="text-gray-300">Bands</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Canvas Chart -->
+                <div class="relative w-full h-[320px] bg-darkbg rounded-lg overflow-hidden border border-borderbg">
+                    <canvas id="tradingChart" class="w-full h-full block"></canvas>
+                </div>
+            </div>
+
+            <!-- Open Positions Table -->
+            <div class="bg-cardbg p-4 rounded-xl border border-borderbg flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-white text-md flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-gold"></i>
+                        مامەڵە کراوەکان (Open Positions)
+                    </h3>
+                    <span id="openOrdersCount" class="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">0 کراوەتەوە</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-xs">
+                        <thead>
+                            <tr class="text-gray-400 border-b border-borderbg bg-darkbg/50">
+                                <th class="p-2">ID</th>
+                                <th class="p-2">جفت</th>
+                                <th class="p-2">جۆر</th>
+                                <th class="p-2">لۆت</th>
+                                <th class="p-2">نرخی چوونه‌ژوور</th>
+                                <th class="p-2">نرخی ئێستا</th>
+                                <th class="p-2">SL / TP</th>
+                                <th class="p-2">قازانج/زیان</th>
+                                <th class="p-2 text-center">کردار</th>
+                            </tr>
+                        </thead>
+                        <tbody id="openOrdersTable">
+                            <tr>
+                                <td colspan="9" class="text-center py-6 text-gray-500">هیچ مامەڵەیەکی کراوە نییە لە ئێستادا.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Strategy Configuration & Manual Actions (4 Cols) -->
+        <div class="lg:col-span-4 flex flex-col gap-4">
+
+            <!-- Strategy Builder / Parameters -->
+            <div class="bg-cardbg p-4 rounded-xl border border-borderbg">
+                <h3 class="font-bold text-white text-md mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-gold"></i>
+                    ڕێکخستنی ستراتیجی ڕۆبۆت (EA Parameters)
+                </h3>
+
+                <form id="botConfigForm" onsubmit="event.preventDefault();" class="space-y-3 text-xs">
+                    <!-- Trigger Strategy Selection -->
+                    <div>
+                        <label class="block text-gray-400 mb-1">مەرجی کڕین/فرۆشتنی ئۆتۆماتیکی</label>
+                        <select id="strategyType" class="w-full bg-darkbg text-white border border-borderbg rounded-lg p-2 focus:outline-none focus:border-gold">
+                            <option value="sma_cross">تێپەڕاندنی SMA (SMA Crossover)</option>
+                            <option value="rsi_bounce">گەرانەوەی RSI (Overbought/Oversold)</option>
+                            <option value="breakout">شکاندنی باندەکان (Bollinger Breakout)</option>
+                        </select>
+                    </div>
+
+                    <!-- Lot Size -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-gray-400 mb-1">قەبارەی لۆت (Lot Size)</label>
+                            <input type="number" id="cfgLot" value="0.10" step="0.01" min="0.01" class="w-full bg-darkbg text-white border border-borderbg rounded-lg p-2 focus:outline-none focus:border-gold">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1">ماوەی شیکاری (RSI Period)</label>
+                            <input type="number" id="cfgRSIPeriod" value="14" class="w-full bg-darkbg text-white border border-borderbg rounded-lg p-2 focus:outline-none focus:border-gold">
+                        </div>
+                    </div>
+
+                    <!-- TP & SL in Pips -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-gray-400 mb-1">دابڕینی زیان (SL - Pips)</label>
+                            <input type="number" id="cfgSL" value="30" min="5" class="w-full bg-darkbg text-white border border-borderbg rounded-lg p-2 focus:outline-none focus:border-gold">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1">دیاریکردنی قازانج (TP - Pips)</label>
+                            <input type="number" id="cfgTP" value="60" min="5" class="w-full bg-darkbg text-white border border-borderbg rounded-lg p-2 focus:outline-none focus:border-gold">
+                        </div>
+                    </div>
+
+                    <!-- Trailing Stop -->
+                    <div class="flex items-center justify-between p-2 bg-darkbg rounded-lg border border-borderbg">
+                        <span class="text-gray-300">Trailing Stop (بەدواداوچوونی قازانج)</span>
+                        <input type="checkbox" id="cfgTrailing" class="w-4 h-4 accent-gold">
+                    </div>
+
+                    <button onclick="saveBotSettings()" class="w-full bg-gold hover:bg-gold-dark text-slate-950 font-bold py-2 rounded-lg transition-all mt-2">
+                        پاشەکەوتکردنی ڕێکخستنەکان
+                    </button>
+                </form>
+            </div>
+
+            <!-- Manual Order Execution Panel -->
+            <div class="bg-cardbg p-4 rounded-xl border border-borderbg">
+                <h3 class="font-bold text-white text-md mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-hand-pointer text-gold"></i>
+                    کرداری دەستی (Manual Execution)
+                </h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="executeManualTrade('ORDER_TYPE_BUY')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg transition-all flex flex-col items-center justify-center glow-green">
+                        <span class="text-sm">کڕین (BUY)</span>
+                        <span id="buyPriceVal" class="text-xs font-normal opacity-90">2,350.50</span>
+                    </button>
+                    <button onclick="executeManualTrade('ORDER_TYPE_SELL')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2.5 rounded-lg transition-all flex flex-col items-center justify-center glow-red">
+                        <span class="text-sm">فرۆشتن (SELL)</span>
+                        <span id="sellPriceVal" class="text-xs font-normal opacity-90">2,350.30</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Webhook & MetaTrader Log Console -->
+            <div class="bg-cardbg p-4 rounded-xl border border-borderbg flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-bold text-white text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-terminal text-gold"></i>
+                        تێرمیناڵی ئاگاداری ڕۆبۆت (Live Log)
+                    </h3>
+                    <button onclick="clearConsole()" class="text-[10px] text-gray-500 hover:text-gray-300">سڕینەوە</button>
+                </div>
+                <div id="consoleLog" class="w-full h-36 bg-darkbg rounded-lg p-2 font-mono text-[11px] text-emerald-400 overflow-y-auto space-y-1 border border-borderbg">
+                    <div>[INFO] سیستەم بەسەرکەوتوویی دەستی پێکرد...</div>
+                    <div>[INFO] ئامادەیە بۆ وەرگرتنی سیگناڵەکان لەسەر MT5.</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Full Column: Closed Trades History -->
+        <div class="lg:col-span-12 bg-cardbg p-4 rounded-xl border border-borderbg">
+            <h3 class="font-bold text-white text-md mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-gold"></i>
+                مێژووی مامەڵە داخراوەکان (Trade History)
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-xs">
+                    <thead>
+                        <tr class="text-gray-400 border-b border-borderbg bg-darkbg/50">
+                            <th class="p-2">ID</th>
+                            <th class="p-2">جفت</th>
+                            <th class="p-2">جۆر</th>
+                            <th class="p-2">لۆت</th>
+                            <th class="p-2">نرخی چوونه‌ژوور</th>
+                            <th class="p-2">نرخی داخران</th>
+                            <th class="p-2">هۆکاری داخران</th>
+                            <th class="p-2">قازانج/زیانی کۆتایی</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyOrdersTable">
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-gray-500">هیچ مێژوویەکی مامەڵە تۆمار نەکراوە.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-cardbg border-t border-borderbg py-3 px-4 text-center text-xs text-gray-500">
+        Forex Automation Simulator & EA Dashboard &copy; 2026 - دیزاینکراوە بە شێوازی HTML5 & Vanilla JavaScript
+    </footer>
+
+    <!-- Application Script (MetaApi Integration included) -->
+    <script>
+        // --- MetaApi Live Credentials ---
+        const METAAPI_TOKEN = "EyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1YTBiMzgyZTI0YTBiNTA4MjI4NDkyM2I3NTBjYTgyNiIsImFjY2Vzc1J1bGVzIjpbeyJpZCI6InRyYWRpbmctYWNjb3VudC1tYW5hZ2VtZW50LWFwaSIsIm1ldGhvZHMiOlsidHJhZGluZy1hY2NvdW50LW1hbmFnZW1lbnQtYXBpOnJlc3Q6cHVibGljOio6KiJdLCJyb2xlcyI6WyJyZWFkZXIiLCJ3cml0ZXIiXSwicmVzb3VyY2VzIjpbIio6JFVTRVJfSUQkOioiXX0seyJpZCI6Im1ldGFhcGktcmVzdC1hcGkiLCJtZXRob2RzIjpbIm1ldGFhcGktYXBpOnJlc3Q6cHVibGljOio6KiJdLCJyb2xlcyI6WyJyZWFkZXIiLCJ3cml0ZXIiXSwicmVzb3VyY2VzIjpbIio6JFVTRVJfSUQkOioiXX0seyJpZCI6Im1ldGFhcGktcnBjLWFwaSIsIm1ldGhvZHMiOlsibWV0YWFwaS1hcGk6d3M6cHVibGljOio6KiJdLCJyb2xlcyI6WyJyZWFkZXIiLCJ3cml0ZXIiXSwicmVzb3VyY2VzIjpbIio6JFVTRVJfSUQkOioiXX0seyJpZCI6Im1ldGFhcGktcmVhbC10aW1lLXN0cmVhbWluZy1hcGkiLCJtZXRob2RzIjpbIm1ldGFhcGktYXBpOndzOnB1YmxpYzoqOioiXSwicm9sZXMiOlsicmVhZGVyIiwid3JpdGVyIl0sInJlc291cmNlcyI6WyIqOiRVU0VSX0lEJDoqIl19LHsiaWQiOiJtZXRhc3RhdHMtYXBpIiwibWV0aG9kcyI6WyJtZXRhc3RhdHMtYXBpOnJlc3Q6cHVibGljOio6KiJdLCJyb2xlcyI6WyJyZWFkZXIiLCJ3cml0ZXIiXSwicmVzb3VyY2VzIjpbIio6JFVTRVJfSUQkOioiXX0seyJpZCI6InJpc2stbWFuYWdlbWVudC1hcGkiLCJtZXRob2RzIjpbInJpc2stbWFuYWdlbWVudC1hcGk6cmVzdDpwdWJsaWM6KjoqIl0sInJvbGVzIjpbInJlYWRlciIsIndyaXRlciJdLCJyZXNvdXJjZXMiOlsiKjokVVNFUl9JRCQ6KiJdfSx7ImlkIjoiY29weWZhY3RvcnktYXBpIiwibWV0aG9kcyI6WyJjb3B5ZmFjdG9yeS1hcGk6cmVzdDpwdWJsaWM6KjoqIl0sInJvbGVzIjpbInJlYWRlciIsIndyaXRlciJdLCJyZXNvdXJjZXMiOlsiKjokVVNFUl9JRCQ6KiJdfSx7ImlkIjoibXQtbWFuYWdlci1hcGkiLCJtZXRob2RzIjpbIm10LW1hbmFnZXItYXBpOnJlc3Q6ZGVhbGluZzoqOioiLCJtdC1tYW5hZ2VtZW50LWFwaS1yZXN0OnB1YmxpYzoqOioiXSwicm9sZXMiOlsicmVhZGVyIiwid3JpdGVyIl0sInJlc291cmNlcyI6WyIqOiRVU0VSX0lEJDoqIl19LHsiaWQiOiJiaWxsaW5nLWFwaSIsIm1ldGhvZHMiOlsiYmlsbGluZy1hcGk6cmVzdDpwdWJsaWM6KjoqIl0sInJvbGVzIjpbInJlYWRlciJdLCJyZXNvdXJjZXMiOlsiKjokVVNFUl9JRCQ6KiJdfV0sImlnbm9yZVJhdGVMaW1pdHMiOmZhbHNlLCJ0b2tlbklkIjoiMjAyMTAyMTMiLCJpbXBlcnNvbmF0ZWQiOmZhbHNlLCJyZWFsVXNlcklkIjoiNWEwYjM4MmUyNGEwYjUwODIyODQ5MjNiNzUwY2E4MjYiLCJpYXQiOjE3OTI0Mjg2OTEsImV4cCI6MTgwMDIwNDY5MX0.WYDL347da4Ux8IdQXXde1MoLqqQ_Nc8JqQkcAvysM17jr0JlEP9YCvrR8SzSILEgwXHU84N4kUMWyYexA55Nmb_6D-KibUg2ftKApwvm85Yfkjm50hLLAWbNs8CzqzQZ5jcDrrNGkAGvR_RFB5sQgOVPjMczzJSYe04eI9pqRYC1ZeAIDccCzxr4f963GwUZIBK2CHXy7UDXvttCFg3S-qbtxbJvssNHqakUuBign0IAariYZrWY7-WqUvbhrqzSYK9E9-sgTKb3TJwTjeTIUvR8uYJLWe1il-zh19RhPzE33QnTUnTC7j8pJcTEP67gQuXkRAXThC_1364XHa3AHZu-M2tugMf7ixKcaVwGwQImiiAFmRpTEVe_DzHkH3Gr0rp6_0chtUeEzeA9nAEbFhlV44MOYfyemOCnyOGVL2zgJ8URZFYPj-TiWPlIGU4qzqNI13K6o5Zw7oXwFnGUAZWSiBvTCc720-OgBltF70YHjOuN_PCLuM5AmP-_UcKoxYmdIf93MwxxFA3vEFYg8y8L9cHgfswxzZP5vR2V9o4z3175nGLKJ2emNLNh1uUL8nIzr9DgBK_57ZAnWDft9K7l7Q_pLw0rFvlRQaopfXBBm9F1XGYpvYd_TtopKV3uRYnaf9zGyBUtxDXvG75PPt0CdGh4oBEYiCGGI4hFcVE";
+        const METAAPI_ACCOUNT_ID = "5ffe52c6-d445-436b-90df-d6ae36c435c7";
+
+        // --- Global App State ---
+        const state = {
+            botActive: false,
+            balance: 10000.00,
+            equity: 10000.00,
+            selectedPair: 'XAUUSD',
+            chartType: 'candlestick',
+            pairPrices: {
+                EURUSD: { current: 1.0850, pipSize: 0.0001, history: [] },
+                GBPUSD: { current: 1.2640, pipSize: 0.0001, history: [] },
+                XAUUSD: { current: 2350.50, pipSize: 0.1, history: [] },
+                BTCUSD: { current: 64200.00, pipSize: 1.0, history: [] }
+            },
+            openOrders: [],
+            closedOrders: [],
+            orderCounter: 1001,
+            config: {
+                strategy: 'sma_cross',
+                lotSize: 0.10,
+                rsiPeriod: 14,
+                slPips: 30,
+                tpPips: 60,
+                trailingStop: false
+            }
+        };
+
+        // --- Canvas Chart Element ---
+        const canvas = document.getElementById('tradingChart');
+        const ctx = canvas.getContext('2d');
+
+        // Initialize Synthetic Price Data
+        function initPriceHistory() {
+            Object.keys(state.pairPrices).forEach(pair => {
+                let basePrice = state.pairPrices[pair].current;
+                let arr = [];
+                for (let i = 0; i < 40; i++) {
+                    let change = (Math.random() - 0.49) * (basePrice * 0.002);
+                    let open = basePrice;
+                    let close = open + change;
+                    let high = Math.max(open, close) + Math.random() * (basePrice * 0.001);
+                    let low = Math.min(open, close) - Math.random() * (basePrice * 0.001);
+                    arr.push({ open, high, low, close });
+                    basePrice = close;
+                }
+                state.pairPrices[pair].history = arr;
+                state.pairPrices[pair].current = arr[arr.length - 1].close;
+            });
+        }
+
+        // --- Resize & Draw Chart ---
+        function resizeCanvas() {
+            if (canvas.parentElement) {
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+                drawChart();
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function setChartType(type) {
+            state.chartType = type;
+            document.getElementById('btnCandle').className = type === 'candlestick' ? 'px-2.5 py-1 bg-gold text-slate-950 font-bold rounded' : 'px-2.5 py-1 bg-darkbg text-gray-300 rounded border border-borderbg hover:bg-gray-800';
+            document.getElementById('btnLine').className = type === 'line' ? 'px-2.5 py-1 bg-gold text-slate-950 font-bold rounded' : 'px-2.5 py-1 bg-darkbg text-gray-300 rounded border border-borderbg hover:bg-gray-800';
+            drawChart();
+        }
+
+        function drawChart() {
+            if (!ctx) return;
+            const width = canvas.width;
+            const height = canvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            const pairData = state.pairPrices[state.selectedPair];
+            const history = pairData.history;
+            if (history.length === 0) return;
+
+            let minP = Math.min(...history.map(d => d.low));
+            let maxP = Math.max(...history.map(d => d.high));
+            let range = maxP - minP || 1;
+            let padding = 20;
+
+            const getY = (price) => height - padding - ((price - minP) / range) * (height - padding * 2);
+
+            ctx.strokeStyle = '#1f2937';
+            ctx.lineWidth = 1;
+            for (let i = 1; i <= 4; i++) {
+                let y = (height / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            const candleWidth = (width - 40) / history.length;
+
+            if (state.chartType === 'candlestick') {
+                history.forEach((bar, index) => {
+                    let x = 20 + index * candleWidth + candleWidth / 2;
+                    let openY = getY(bar.open);
+                    let closeY = getY(bar.close);
+                    let highY = getY(bar.high);
+                    let lowY = getY(bar.low);
+
+                    let isGreen = bar.close >= bar.open;
+                    ctx.strokeStyle = isGreen ? '#10b981' : '#ef4444';
+                    ctx.fillStyle = isGreen ? '#10b981' : '#ef4444';
+
+                    ctx.beginPath();
+                    ctx.moveTo(x, highY);
+                    ctx.lineTo(x, lowY);
+                    ctx.stroke();
+
+                    let bodyTop = Math.min(openY, closeY);
+                    let bodyHeight = Math.max(Math.abs(openY - closeY), 2);
+                    ctx.fillRect(x - candleWidth * 0.35, bodyTop, candleWidth * 0.7, bodyHeight);
+                });
+            } else {
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                history.forEach((bar, index) => {
+                    let x = 20 + index * candleWidth + candleWidth / 2;
+                    let y = getY(bar.close);
+                    if (index === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            }
+
+            if (document.getElementById('chkSMA').checked && history.length >= 5) {
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                for (let i = 4; i < history.length; i++) {
+                    let sum = 0;
+                    for (let j = i - 4; j <= i; j++) sum += history[j].close;
+                    let sma = sum / 5;
+                    let x = 20 + i * candleWidth + candleWidth / 2;
+                    let y = getY(sma);
+                    if (i === 4) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+        }
+
+        // --- Price Simulator Engine ---
+        function tickPriceSimulation() {
+            Object.keys(state.pairPrices).forEach(pair => {
+                let pData = state.pairPrices[pair];
+                let history = pData.history;
+                let lastBar = history[history.length - 1];
+
+                let delta = (Math.random() - 0.495) * (pData.current * 0.0015);
+                let newClose = lastBar.close + delta;
+
+                lastBar.close = newClose;
+                if (newClose > lastBar.high) lastBar.high = newClose;
+                if (newClose < lastBar.low) lastBar.low = newClose;
+
+                pData.current = newClose;
+
+                if (Math.random() < 0.2) {
+                    history.shift();
+                    history.push({
+                        open: newClose,
+                        high: newClose,
+                        low: newClose,
+                        close: newClose
+                    });
+                }
+            });
+
+            updateUIPrices();
+            evaluateOpenOrders();
+            if (state.botActive) runBotLogic();
+            drawChart();
+        }
+
+        // --- UI Updates ---
+        function updateUIPrices() {
+            let curPrice = state.pairPrices[state.selectedPair].current;
+            let formatted = state.selectedPair.includes('USD') && !state.selectedPair.includes('XAU') && !state.selectedPair.includes('BTC') 
+                ? curPrice.toFixed(4) : curPrice.toFixed(2);
+
+            document.getElementById('currentPriceDisplay').innerText = formatted;
+            document.getElementById('buyPriceVal').innerText = formatted;
+            document.getElementById('sellPriceVal').innerText = (curPrice - state.pairPrices[state.selectedPair].pipSize * 2).toFixed(2);
+        }
+
+        function changePair() {
+            state.selectedPair = document.getElementById('pairSelect').value;
+            updateUIPrices();
+            drawChart();
+            logConsole(`گۆڕینی جفت بۆ: ${state.selectedPair}`);
+        }
+
+        // --- Bot Logic Engine (EA Rules) ---
+        function toggleBot() {
+            state.botActive = !state.botActive;
+            const btn = document.getElementById('toggleBotBtn');
+            const dot = document.getElementById('botStatusDot');
+            const text = document.getElementById('botStatusText');
+
+            if (state.botActive) {
+                btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-4 rounded-lg transition-all text-sm flex items-center gap-2 shadow-md glow-green";
+                btn.innerHTML = `<i class="fa-solid fa-power-off"></i><span>ڕاگرتن</span>`;
+                dot.className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
+                text.className = "text-sm font-semibold text-emerald-400";
+                text.innerText = "دۆخی ڕۆبۆت: چالاکە";
+                logConsole("[BOT] ڕۆبۆت بەکارهێنرا و دەستی کرد بە چاودێریکردنی بازاڕ...");
+            } else {
+                btn.className = "bg-red-600 hover:bg-red-500 text-white font-bold py-1.5 px-4 rounded-lg transition-all text-sm flex items-center gap-2 shadow-md";
+                btn.innerHTML = `<i class="fa-solid fa-power-off"></i><span>چالاککردن</span>`;
+                dot.className = "w-3 h-3 rounded-full bg-red-500 animate-pulse";
+                text.className = "text-sm font-semibold text-red-400";
+                text.innerText = "دۆخی ڕۆبۆت: ناچالاک";
+                logConsole("[BOT] ڕۆبۆت ڕاگیرا.");
+            }
+        }
+
+        function runBotLogic() {
+            if (state.openOrders.length >= 3) return;
+
+            let history = state.pairPrices[state.selectedPair].history;
+            if (history.length < 5) return;
+
+            let lastClose = history[history.length - 1].close;
+            let prevClose = history[history.length - 2].close;
+
+            let sum = 0;
+            for (let i = history.length - 5; i < history.length; i++) sum += history[i].close;
+            let sma = sum / 5;
+
+            if (state.config.strategy === 'sma_cross') {
+                if (prevClose < sma && lastClose > sma) {
+                    executeManualTrade('ORDER_TYPE_BUY');
+                } else if (prevClose > sma && lastClose < sma) {
+                    executeManualTrade('ORDER_TYPE_SELL');
+                }
+            } else if (state.config.strategy === 'rsi_bounce') {
+                let rand = Math.random();
+                if (rand < 0.02) executeManualTrade('ORDER_TYPE_BUY');
+                else if (rand > 0.98) executeManualTrade('ORDER_TYPE_SELL');
+            }
+        }
+
+        // --- MetaApi Live Trade Execution Core ---
+        async function executeManualTrade(actionType) {
+            const pair = state.selectedPair;
+            const lot = state.config.lotSize;
+            const entryPrice = state.pairPrices[pair].current;
+            const pip = state.pairPrices[pair].pipSize;
+
+            let slPips = parseFloat(document.getElementById('cfgSL').value) || 30;
+            let tpPips = parseFloat(document.getElementById('cfgTP').value) || 60;
+
+            let sl = actionType === 'ORDER_TYPE_BUY' ? entryPrice - (slPips * pip) : entryPrice + (slPips * pip);
+            let tp = actionType === 'ORDER_TYPE_BUY' ? entryPrice + (tpPips * pip) : entryPrice - (tpPips * pip);
+
+            logConsole(`[API] ناردنی فەرمانی ${actionType} بۆ لایڤ ئاکاونت لەسەر MetaApi...`);
+
+            // URLی ڕاستکراوەی MetaApi REST API
+            const url = `https://mt-client-api-v1.new-york.agilix.metaapi.cloud/users/current/accounts/${METAAPI_ACCOUNT_ID}/trade`;
+            
+            const bodyData = {
+                actionType: actionType,
+                symbol: pair,
+                volume: parseFloat(lot)
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'auth-token': METAAPI_TOKEN,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(bodyData)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    logConsole(`[SUCCESS] فەرمانی لایڤ بە سەرکەوتوویی لە MT5 جێبەجێ بوو!`);
+                    
+                    let order = {
+                        id: state.orderCounter++,
+                        pair: pair,
+                        type: actionType === 'ORDER_TYPE_BUY' ? 'BUY' : 'SELL',
+                        lot: parseFloat(lot),
+                        entryPrice: entryPrice,
+                        currentPrice: entryPrice,
+                        sl: sl,
+                        tp: tp,
+                        pnl: 0.0,
+                        source: 'لایڤ (MetaApi)'
+                    };
+
+                    state.openOrders.push(order);
+                    renderOpenOrders();
+                } else {
+                    logConsole(`[ERROR] هەڵە لەلایەن برۆکەرەوە: ${data.message || JSON.stringify(data)}`);
+                }
+            } catch (err) {
+                logConsole(`[ERROR] کێشەی پەیوەندی لەگەڵ سەرۆکی MetaApi روویدا.`);
+                console.error("MetaApi fetch error:", err);
+            }
+        }
+
+        function closeOrder(id, reason = 'دەستی') {
+            let idx = state.openOrders.findIndex(o => o.id === id);
+            if (idx === -1) return;
+
+            let order = state.openOrders[idx];
+            state.balance += order.pnl;
+            state.equity = state.balance;
+
+            state.closedOrders.unshift({
+                ...order,
+                closePrice: order.currentPrice,
+                closeReason: reason
+            });
+
+            state.openOrders.splice(idx, 1);
+            logConsole(`[CLOSE #${order.id}] داخرا (${reason}) بە قازانج/زیانی: $${order.pnl.toFixed(2)}`);
+            
+            renderOpenOrders();
+            renderHistoryOrders();
+            updateStats();
+        }
+
+        function evaluateOpenOrders() {
+            let totalUnrealizedPnL = 0;
+
+            state.openOrders.forEach(order => {
+                let curPrice = state.pairPrices[order.pair].current;
+                let pip = state.pairPrices[order.pair].pipSize;
+                order.currentPrice = curPrice;
+
+                let pipsDiff = order.type === 'BUY' ? (curPrice - order.entryPrice) / pip : (order.entryPrice - curPrice) / pip;
+                order.pnl = pipsDiff * order.lot * 10;
+
+                totalUnrealizedPnL += order.pnl;
+
+                if (order.type === 'BUY') {
+                    if (curPrice >= order.tp) closeOrder(order.id, 'Take Profit 🎯');
+                    else if (curPrice <= order.sl) closeOrder(order.id, 'Stop Loss 🛑');
+                } else {
+                    if (curPrice <= order.tp) closeOrder(order.id, 'Take Profit 🎯');
+                    else if (curPrice >= order.sl) closeOrder(order.id, 'Stop Loss 🛑');
+                }
+            });
+
+            state.equity = state.balance + totalUnrealizedPnL;
+            updateStats(totalUnrealizedPnL);
+            renderOpenOrdersPricesOnly();
+        }
+
+        // --- Render UI Tables & Stats ---
+        function updateStats(unrealizedPnL = 0) {
+            document.getElementById('statBalance').innerText = `$${state.balance.toFixed(2)}`;
+            document.getElementById('statEquity').innerText = `$${state.equity.toFixed(2)}`;
+            
+            const pnlElem = document.getElementById('statPnL');
+            const iconElem = document.getElementById('pnlIconContainer');
+            
+            pnlElem.innerText = `${unrealizedPnL >= 0 ? '+' : ''}$${unrealizedPnL.toFixed(2)}`;
+            
+            if (unrealizedPnL > 0) {
+                pnlElem.className = "text-xl font-bold text-emerald-400";
+                iconElem.className = "w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg";
+            } else if (unrealizedPnL < 0) {
+                pnlElem.className = "text-xl font-bold text-red-400";
+                iconElem.className = "w-10 h-10 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center text-lg";
+            } else {
+                pnlElem.className = "text-xl font-bold text-gray-400";
+                iconElem.className = "w-10 h-10 rounded-lg bg-gray-500/10 text-gray-400 flex items-center justify-center text-lg";
+            }
+
+            if (state.closedOrders.length > 0) {
+                let wins = state.closedOrders.filter(o => o.pnl > 0).length;
+                let rate = (wins / state.closedOrders.length) * 100;
+                document.getElementById('statWinRate').innerText = `${rate.toFixed(1)}%`;
+            }
+        }
+
+        function renderOpenOrders() {
+            const table = document.getElementById('openOrdersTable');
+            document.getElementById('openOrdersCount').innerText = `${state.openOrders.length} کراوەتەوە`;
+
+            if (state.openOrders.length === 0) {
+                table.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-gray-500">هیچ مامەڵەیەکی کراوە نییە لە ئێستادا.</td></tr>`;
+                return;
+            }
+
+            table.innerHTML = state.openOrders.map(o => {
+                let pnlClass = o.pnl >= 0 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
+                let typeClass = o.type === 'BUY' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30';
+                
+                return `
+                    <tr class="border-b border-borderbg/50 hover:bg-darkbg/30">
+                        <td class="p-2 font-mono">#${o.id}</td>
+                        <td class="p-2 font-bold text-white">${o.pair}</td>
+                        <td class="p-2"><span class="px-2 py-0.5 rounded text-[10px] ${typeClass}">${o.type}</span></td>
+                        <td class="p-2">${o.lot}</td>
+                        <td class="p-2 font-mono">$${o.entryPrice.toFixed(2)}</td>
+                        <td class="p-2 font-mono text-white" id="order-price-${o.id}">$${o.currentPrice.toFixed(2)}</td>
+                        <td class="p-2 text-[10px] text-gray-400">SL: ${o.sl.toFixed(1)}<br>TP: ${o.tp.toFixed(1)}</td>
+                        <td class="p-2 font-mono ${pnlClass}" id="order-pnl-${o.id}">${o.pnl >= 0 ? '+' : ''}$${o.pnl.toFixed(2)}</td>
+                        <td class="p-2 text-center">
+                            <button onclick="closeOrder(${o.id})" class="bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white px-2 py-1 rounded border border-red-500/30 text-[10px] transition-all">
+                                داخران
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderOpenOrdersPricesOnly() {
+            state.openOrders.forEach(o => {
+                let pElem = document.getElementById(`order-price-${o.id}`);
+                let pnlElem = document.getElementById(`order-pnl-${o.id}`);
+                if (pElem) pElem.innerText = `$${o.currentPrice.toFixed(2)}`;
+                if (pnlElem) {
+                    pnlElem.innerText = `${o.pnl >= 0 ? '+' : ''}$${o.pnl.toFixed(2)}`;
+                    pnlElem.className = `p-2 font-mono ${o.pnl >= 0 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}`;
+                }
+            });
+        }
+
+        function renderHistoryOrders() {
+            const table = document.getElementById('historyOrdersTable');
+            if (state.closedOrders.length === 0) {
+                table.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">هیچ مێژوویەکی مامەڵە تۆمار نەکراوە.</td></tr>`;
+                return;
+            }
+
+            table.innerHTML = state.closedOrders.map(o => {
+                let pnlClass = o.pnl >= 0 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
+                let typeClass = o.type === 'BUY' ? 'text-emerald-400' : 'text-red-400';
+
+                return `
+                    <tr class="border-b border-borderbg/50 hover:bg-darkbg/30">
+                        <td class="p-2 font-mono">#${o.id}</td>
+                        <td class="p-2 font-bold text-white">${o.pair}</td>
+                        <td class="p-2 font-bold ${typeClass}">${o.type}</td>
+                        <td class="p-2">${o.lot}</td>
+                        <td class="p-2 font-mono">$${o.entryPrice.toFixed(2)}</td>
+                        <td class="p-2 font-mono text-white">$${o.closePrice.toFixed(2)}</td>
+                        <td class="p-2 text-gray-400">${o.closeReason}</td>
+                        <td class="p-2 font-mono ${pnlClass}">${o.pnl >= 0 ? '+' : ''}$${o.pnl.toFixed(2)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // --- Console Helper ---
+        function logConsole(msg) {
+            const consoleBox = document.getElementById('consoleLog');
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            const item = document.createElement('div');
+            item.innerHTML = `<span class="text-gray-500">[${time}]</span> ${msg}`;
+            consoleBox.appendChild(item);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('consoleLog').innerHTML = '';
+        }
+
+        function saveBotSettings() {
+            state.config.strategy = document.getElementById('strategyType').value;
+            state.config.lotSize = parseFloat(document.getElementById('cfgLot').value) || 0.1;
+            state.config.rsiPeriod = parseInt(document.getElementById('cfgRSIPeriod').value) || 14;
+            state.config.slPips = parseFloat(document.getElementById('cfgSL').value) || 30;
+            state.config.tpPips = parseFloat(document.getElementById('cfgTP').value) || 60;
+            state.config.trailingStop = document.getElementById('cfgTrailing').checked;
+
+            logConsole(`[CONFIG] ڕێکخستنی نوێ پاشەکەوت کرا: Strategy=${state.config.strategy}, Lot=${state.config.lotSize}, SL=${state.config.slPips}pips, TP=${state.config.tpPips}pips`);
+        }
+
+        // --- App Initialization ---
+        window.onload = function () {
+            initPriceHistory();
+            resizeCanvas();
+            updateUIPrices();
+            
+            setInterval(tickPriceSimulation, 800);
+        };
+    </script>
+</body>
+</html>
